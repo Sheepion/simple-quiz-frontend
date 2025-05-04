@@ -1,28 +1,63 @@
 <script setup>
-import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { getQuizBankList } from '../../api/quiz-bank'
+import { onMounted, ref, watch } from 'vue'
+import { getQuizBankList, searchQuizBanks } from '../../api/quiz-bank'
 import EmptyState from '../common/EmptyState.vue'
 import ErrorAlert from '../common/ErrorAlert.vue'
 import LoadingIndicator from '../common/LoadingIndicator.vue'
-import Pagination from '../common/Pagination.vue'
 import QuizBankCard from './QuizBankCard.vue'
 
-const router = useRouter()
 const quizBanks = ref([])
 const loading = ref(true)
 const error = ref(null)
-const currentPage = ref(1)
-const totalPages = ref(1) // 实际应用中可能需要从后端获取
+const searchKeyword = ref('')
+
+// 定义emit以便向父组件传递事件
+const emit = defineEmits(['edit-quiz-bank', 'enter-quiz-bank'])
+
+// defineProps接收来自父组件的数据
+const props = defineProps({
+  currentPage: {
+    type: Number,
+    default: 1
+  },
+  keyword: {
+    type: String,
+    default: ''
+  }
+})
+
+// 监听搜索关键词变化
+watch(() => props.keyword, (newValue) => {
+  searchKeyword.value = newValue
+  fetchQuizBanks()
+})
+
+// 监听页码变化
+watch(() => props.currentPage, () => {
+  fetchQuizBanks()
+})
 
 onMounted(async () => {
   await fetchQuizBanks()
 })
 
+/**
+ * 获取题库列表数据
+ * 如果有搜索关键词则调用搜索接口，否则调用获取全部列表接口
+ */
 const fetchQuizBanks = async () => {
   try {
     loading.value = true
-    const res = await getQuizBankList()
+    
+    let res
+    if (searchKeyword.value) {
+      // 有搜索关键词时调用搜索接口
+      res = await searchQuizBanks({ name: searchKeyword.value })
+    } else {
+      // 没有搜索关键词时调用获取全部列表接口
+      res = await getQuizBankList()
+    }
+    
     if (res.data.code === 200) {
       quizBanks.value = res.data.data || []
     } else {
@@ -35,37 +70,17 @@ const fetchQuizBanks = async () => {
   }
 }
 
-const handleCreateQuizBank = () => {
-  // 实际应用中可能会跳转到创建题库页面或显示创建对话框
-  console.log('创建新题库')
-}
-
 const handleEditQuizBank = (id) => {
-  console.log('编辑题库', id)
+  emit('edit-quiz-bank', id)
 }
 
 const handleEnterQuizBank = (id) => {
-  console.log('进入题库', id)
-  // router.push(`/quiz-bank/${id}`)
-}
-
-const handlePageChange = (page) => {
-  currentPage.value = page
-  // 实际应用中可能需要重新获取数据
-  // fetchQuizBanks(page)
+  emit('enter-quiz-bank', id)
 }
 </script>
 
 <template>
-  <div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold">题库列表</h1>
-      <button 
-        class="btn btn-primary"
-        @click="handleCreateQuizBank"
-      >新建题库</button>
-    </div>
-
+  <div>
     <!-- 加载状态 -->
     <LoadingIndicator v-if="loading" />
 
@@ -75,7 +90,7 @@ const handlePageChange = (page) => {
     <!-- 空数据提示 -->
     <EmptyState 
       v-else-if="quizBanks.length === 0" 
-      message="暂无题库数据" 
+      :message="searchKeyword ? `未找到与 '${searchKeyword}' 相关的题库` : '暂无题库数据'"
     />
 
     <!-- 题库列表 -->
@@ -91,13 +106,5 @@ const handlePageChange = (page) => {
         @enter="handleEnterQuizBank"
       />
     </div>
-
-    <!-- 分页 -->
-    <Pagination
-      v-if="!loading && !error && quizBanks.length > 0"
-      :current-page="currentPage"
-      :total-pages="totalPages"
-      @page-change="handlePageChange"
-    />
   </div>
 </template> 
