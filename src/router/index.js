@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import QuizBankList from '../components/QuizBankList.vue'
+import QuizBankList from '../components/quiz-bank/QuizBankList.vue'
 import QuizBank from '../views/QuizBank.vue'
 
 // 定义路由

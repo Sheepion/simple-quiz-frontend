@@ -1,5 +1,5 @@
 <script setup>
-import QuizBankList from '../components/QuizBankList.vue'
+import QuizBankList from '../components/quiz-bank/QuizBankList.vue';
 </script>
 
 <template>
