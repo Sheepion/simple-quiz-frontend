@@ -52,8 +52,13 @@ const handleEditQuizBank = async (id) => {
 
 // 处理进入题库
 const handleEnterQuizBank = (id) => {
-  console.log('进入题库', id);
-  // router.push(`/quiz-bank/${id}`);
+  console.log('进入题库被触发，ID:', id);
+  try {
+    router.push(`/quizbank/${id}/questions`);
+    console.log('路由跳转已执行');
+  } catch (err) {
+    console.error('路由跳转错误:', err);
+  }
 };
 
 // 处理分页变化
