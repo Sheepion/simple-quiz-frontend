@@ -10,6 +10,7 @@ import { getQuestionsByBankId } from '../api/question';
 import { getQuizBankById } from '../api/quiz-bank';
 import ErrorAlert from '../components/common/ErrorAlert.vue';
 import LoadingIndicator from '../components/common/LoadingIndicator.vue';
+import QuestionCreateForm from '../components/quiz-bank/QuestionCreateForm.vue';
 import QuestionDetail from '../components/quiz-bank/QuestionDetail.vue';
 import QuestionList from '../components/quiz-bank/QuestionList.vue';
 
@@ -21,7 +22,8 @@ const questions = ref([]);
 const loading = ref(true);
 const error = ref('');
 const selectedQuestion = ref(null);
-const isCreatingQuestion = ref(false);
+const isCreating = ref(false);
+const submittedCount = ref(0);
 
 // 获取题库信息
 const fetchQuizBankInfo = async (id) => {
@@ -71,38 +73,35 @@ const goBackToQuizBanks = () => {
   router.push('/quizbank');
 };
 
-// 新建题目
+// 显示添加题目表单
 const handleCreateQuestion = () => {
   selectedQuestion.value = null;
-  isCreatingQuestion.value = true;
+  isCreating.value = true;
+};
+
+// 取消创建题目
+const handleCancelCreate = () => {
+  isCreating.value = false;
+  selectedQuestion.value = null;
 };
 
 // 查看题目详情
 const handleViewQuestion = (question) => {
-  isCreatingQuestion.value = false;
+  isCreating.value = false;
   selectedQuestion.value = question;
 };
 
 // 编辑题目
 const handleEditQuestion = (question) => {
-  isCreatingQuestion.value = false;
+  isCreating.value = false;
   selectedQuestion.value = question;
 };
 
 // 保存题目
 const handleSaveQuestion = (questionData) => {
   fetchQuestions(); // 刷新题目列表
-  
-  if (isCreatingQuestion.value) {
-    isCreatingQuestion.value = false;
-    selectedQuestion.value = questionData;
-  }
-};
-
-// 取消创建题目
-const handleCancelCreate = () => {
-  isCreatingQuestion.value = false;
-  selectedQuestion.value = null;
+  submittedCount.value += 1;
+  // 不关闭创建模式，允许用户继续添加
 };
 
 // 处理筛选变化
@@ -144,8 +143,11 @@ onMounted(() => {
       </div>
       <div class="navbar-end">
         <button class="btn btn-primary" @click="handleCreateQuestion">
-          新建题目
+          添加题目
         </button>
+        <div v-if="isCreating && submittedCount > 0" class="badge badge-success ml-2">
+          已添加 {{ submittedCount }} 题
+        </div>
       </div>
     </div>
     
@@ -187,13 +189,43 @@ onMounted(() => {
       <div class="p-0 md:p-4 overflow-y-auto md:col-span-2 lg:col-span-3">
         <!-- 题目详情组件 -->
         <QuestionDetail 
+          v-if="selectedQuestion && !isCreating"
           :question="selectedQuestion"
-          :is-new="isCreatingQuestion"
+          :is-new="false"
           :quiz-bank-id="quizBankId"
           @save="handleSaveQuestion"
           @cancel="handleCancelCreate"
           class="h-full"
         />
+        
+        <!-- 添加题目表单 -->
+        <div v-else-if="isCreating" class="h-full">
+          <div class="flex justify-between items-center mb-4">
+          </div>
+          <QuestionCreateForm 
+            :quiz-bank-id="quizBankId" 
+            @save="handleSaveQuestion"
+          />
+        </div>
+        
+        <!-- 未选中题目状态 -->
+        <div v-else class="flex flex-col justify-center items-center h-full p-8 text-center">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-16 w-16 text-base-300 mb-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+          <p class="text-lg text-base-content/70">请从左侧列表选择一个题目，或点击添加题目按钮</p>
+        </div>
       </div>
     </div>
   </div>
