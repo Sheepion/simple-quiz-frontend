@@ -67,15 +67,6 @@ const judgmentOptions = [
   { key: 'B', label: '错误' }
 ];
 
-// 监听题目数据变化，更新表单数据
-watch(() => props.question, (newQuestion) => {
-  if (newQuestion) {
-    resetForm(newQuestion);
-  } else if (props.isNew) {
-    resetToEmpty();
-  }
-}, { immediate: true });
-
 // 是否显示选项的表单
 const showOptionsForm = computed(() => {
   return formData.type === QuestionType.SINGLE_CHOICE || 
@@ -132,6 +123,15 @@ const resetToEmpty = () => {
     { key: 'D', value: '' }
   ];
 };
+
+// 监听题目数据变化，更新表单数据
+watch(() => props.question, (newQuestion) => {
+  if (newQuestion) {
+    resetForm(newQuestion);
+  } else if (props.isNew) {
+    resetToEmpty();
+  }
+}, { immediate: true });
 
 // 添加选项
 const addOption = () => {
