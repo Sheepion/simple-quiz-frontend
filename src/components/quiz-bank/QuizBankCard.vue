@@ -6,7 +6,7 @@ defineProps({
   }
 })
 
-defineEmits(['edit', 'enter'])
+defineEmits(['edit', 'enter', 'enterManagement'])
 </script>
 
 <template>
@@ -23,7 +23,11 @@ defineEmits(['edit', 'enter'])
         <button 
           class="btn btn-primary btn-sm"
           @click="$emit('enter', quizBank.id)"
-        >进入</button>
+        >题目列表</button>
+        <button 
+          class="btn btn-accent btn-sm"
+          @click="$emit('enterManagement', quizBank.id)"
+        >管理题目</button>
       </div>
     </div>
   </div>

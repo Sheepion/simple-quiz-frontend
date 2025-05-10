@@ -32,6 +32,8 @@ const loading = ref(false);
 const error = ref('');
 const searchKeyword = ref('');
 const selectedType = ref('');
+const deleteModalOpen = ref(false);
+const questionToDelete = ref(null);
 
 // 题目类型映射表
 const questionTypeMap = {
@@ -106,9 +108,23 @@ const handleEdit = (question) => {
   emit('edit', question);
 };
 
+// 打开删除确认框
+const openDeleteModal = (question) => {
+  questionToDelete.value = question;
+  deleteModalOpen.value = true;
+};
+
+// 关闭删除确认框
+const closeDeleteModal = () => {
+  deleteModalOpen.value = false;
+  setTimeout(() => {
+    questionToDelete.value = null;
+  }, 300); // 等待modal关闭动画结束后再清空数据
+};
+
 // 处理删除题目
-const handleDelete = async (question) => {
-  if (!confirm(`确定要删除题目 "${question.title}" 吗？`)) {
+const handleDelete = async () => {
+  if (!questionToDelete.value) {
     return;
   }
   
@@ -116,11 +132,12 @@ const handleDelete = async (question) => {
     loading.value = true;
     error.value = '';
     
-    const res = await deleteQuestion(question.id);
+    const res = await deleteQuestion(questionToDelete.value.id);
     
     if (res.data && res.data.code === 200) {
       // 删除成功，通知父组件刷新列表
       emit('refresh');
+      closeDeleteModal();
     } else {
       error.value = res.data?.message || '删除题目失败';
     }
@@ -193,13 +210,18 @@ const handleView = (question) => {
             <th class="w-16">序号</th>
             <th class="w-28">类型</th>
             <th>题目标题</th>
-            <th class="w-36 text-center">操作</th>
+            <th class="w-20 text-center">操作</th>
           </tr>
         </thead>
         
         <!-- 表格内容 -->
         <tbody>
-          <tr v-for="(question, index) in filteredQuestions" :key="question.id" class="hover">
+          <tr 
+            v-for="(question, index) in filteredQuestions" 
+            :key="question.id" 
+            class="hover cursor-pointer"
+            @click="handleView(question)"
+          >
             <td>{{ index + 1 }}</td>
             <td>
               <span :class="getQuestionTypeClass(question.type)" class="px-3 py-1">
@@ -207,29 +229,10 @@ const handleView = (question) => {
               </span>
             </td>
             <td class="font-medium">{{ question.title }}</td>
-            <td>
-              <div class="flex justify-center space-x-2">
+            <td @click.stop>
+              <div class="flex justify-center">
                 <button 
-                  @click="handleView(question)" 
-                  class="btn btn-sm btn-ghost"
-                  title="查看题目"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                </button>
-                <button 
-                  @click="handleEdit(question)" 
-                  class="btn btn-sm btn-ghost"
-                  title="编辑题目"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                </button>
-                <button 
-                  @click="handleDelete(question)" 
+                  @click="openDeleteModal(question)" 
                   class="btn btn-sm btn-ghost"
                   title="删除题目"
                 >
@@ -243,5 +246,28 @@ const handleView = (question) => {
         </tbody>
       </table>
     </div>
+    
+    <!-- 删除确认对话框 -->
+    <dialog id="delete_modal" class="modal modal-bottom sm:modal-middle" :open="deleteModalOpen">
+      <div class="modal-box">
+        <h3 class="font-bold text-lg">确认删除</h3>
+        <p class="py-4">您确定要删除题目 <span class="font-bold text-error">{{ questionToDelete?.title }}</span> 吗？</p>
+        <p class="text-sm text-gray-500">此操作不可逆，删除后数据将无法恢复。</p>
+        <div class="modal-action">
+          <button class="btn btn-outline" @click="closeDeleteModal">取消</button>
+          <button 
+            class="btn btn-error" 
+            @click="handleDelete" 
+            :disabled="loading"
+          >
+            <span v-if="loading" class="loading loading-spinner loading-xs mr-1"></span>
+            确认删除
+          </button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop" @click="closeDeleteModal">
+        <button>关闭</button>
+      </form>
+    </dialog>
   </div>
-</template> 
+</template>

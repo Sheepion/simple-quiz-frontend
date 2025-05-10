@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import QuizBankList from '../components/quiz-bank/QuizBankList.vue'
+import QuestionManagement from '../views/QuestionManagement.vue'
 import QuizBank from '../views/QuizBank.vue'
 import QuizQuestions from '../views/QuizQuestions.vue'
 
@@ -19,6 +20,12 @@ const routes = [
     path: '/quizbank/:id/questions',
     name: 'QuizQuestions',
     component: QuizQuestions,
+    props: true
+  },
+  {
+    path: '/quizbank/:id/management',
+    name: 'QuestionManagement',
+    component: QuestionManagement,
     props: true
   },
   {

@@ -50,11 +50,22 @@ const handleEditQuizBank = async (id) => {
   }
 };
 
-// 处理进入题库
+// 处理进入题目列表
 const handleEnterQuizBank = (id) => {
   console.log('进入题库被触发，ID:', id);
   try {
     router.push(`/quizbank/${id}/questions`);
+    console.log('路由跳转已执行');
+  } catch (err) {
+    console.error('路由跳转错误:', err);
+  }
+};
+
+// 处理进入题目管理
+const handleEnterQuestionManagement = (id) => {
+  console.log('进入题目管理，ID:', id);
+  try {
+    router.push(`/quizbank/${id}/management`);
     console.log('路由跳转已执行');
   } catch (err) {
     console.error('路由跳转错误:', err);
@@ -141,6 +152,7 @@ const handleDialogClose = () => {
       :keyword="searchKeyword"
       @edit-quiz-bank="handleEditQuizBank"
       @enter-quiz-bank="handleEnterQuizBank"
+      @enter-question-management="handleEnterQuestionManagement"
     />
     
     <!-- 分页组件 -->

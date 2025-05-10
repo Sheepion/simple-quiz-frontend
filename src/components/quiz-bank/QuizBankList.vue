@@ -77,6 +77,10 @@ const handleEditQuizBank = (id) => {
 const handleEnterQuizBank = (id) => {
   emit('enter-quiz-bank', id)
 }
+
+const handleEnterQuestionManagement = (id) => {
+  emit('enter-question-management', id)
+}
 </script>
 
 <template>
@@ -104,6 +108,7 @@ const handleEnterQuizBank = (id) => {
         :quiz-bank="quizBank"
         @edit="handleEditQuizBank"
         @enter="handleEnterQuizBank"
+        @enterManagement="handleEnterQuestionManagement"
       />
     </div>
   </div>
