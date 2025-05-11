@@ -6,7 +6,7 @@ defineProps({
   }
 })
 
-defineEmits(['edit', 'enter', 'enterManagement'])
+defineEmits(['edit', 'enter', 'enter-management'])
 </script>
 
 <template>

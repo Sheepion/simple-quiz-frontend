@@ -12,7 +12,7 @@ const error = ref(null)
 const searchKeyword = ref('')
 
 // 定义emit以便向父组件传递事件
-const emit = defineEmits(['edit-quiz-bank', 'enter-quiz-bank'])
+const emit = defineEmits(['edit-quiz-bank', 'enter-quiz-bank', 'enter-question-management'])
 
 // defineProps接收来自父组件的数据
 const props = defineProps({
