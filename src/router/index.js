@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import QuizBankList from '../components/quiz-bank/QuizBankList.vue'
 import QuestionManagement from '../views/QuestionManagement.vue'
 import QuizBank from '../views/QuizBank.vue'
+import QuizExam from '../views/QuizExam.vue'
 import QuizQuestions from '../views/QuizQuestions.vue'
 
 // 定义路由
@@ -26,6 +27,12 @@ const routes = [
     path: '/quizbank/:id/management',
     name: 'QuestionManagement',
     component: QuestionManagement,
+    props: true
+  },
+  {
+    path: '/quizbank/:id/exam',
+    name: 'QuizExam',
+    component: QuizExam,
     props: true
   },
   {

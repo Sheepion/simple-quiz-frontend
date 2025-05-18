@@ -100,6 +100,11 @@ const handleCreateQuestion = () => {
   console.log('新建题目', quizBankId.value);
 };
 
+// 开始答题
+const startExam = () => {
+  router.push(`/quizbank/${quizBankId.value}/exam`);
+};
+
 // 监听路由参数变化
 onMounted(() => {
   console.log('QuizQuestions 组件挂载，路由参数:', route.params);
@@ -131,7 +136,10 @@ onMounted(() => {
           {{ quizBankInfo?.name || '题目列表' }}
         </h1>
       </div>
-      <button class="btn btn-primary" @click="handleCreateQuestion">新建题目</button>
+      <div class="flex gap-2">
+        <button class="btn btn-primary" @click="startExam">开始答题</button>
+        <button class="btn btn-primary" @click="handleCreateQuestion">新建题目</button>
+      </div>
     </div>
     
     <!-- 题库描述 -->
