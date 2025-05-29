@@ -154,6 +154,31 @@ export default function useQuizExam(quizBankId) {
     
     // 对于填空题和简答题，简单比较即可（可能需要更复杂的逻辑）
     if (questionType === 'FILL_BLANK' || questionType === 'SHORT_ANSWER') {
+      // 填空题特殊处理：支持多空答案
+      if (questionType === 'FILL_BLANK' && Array.isArray(correctAnswer)) {
+        let userAnswerArray;
+        try {
+          // 尝试解析用户答案为数组
+          userAnswerArray = JSON.parse(userAnswer);
+        } catch {
+          // 如果解析失败，说明是旧格式的单个答案，转换为数组
+          userAnswerArray = [userAnswer];
+        }
+        
+        // 检查数组长度是否匹配
+        if (!Array.isArray(userAnswerArray) || userAnswerArray.length !== correctAnswer.length) {
+          return false;
+        }
+        
+        // 逐个比较每个空格的答案
+        return userAnswerArray.every((answer, index) => {
+          const trimmedUserAnswer = (answer || '').toString().trim();
+          const trimmedCorrectAnswer = (correctAnswer[index] || '').toString().trim();
+          return trimmedUserAnswer === trimmedCorrectAnswer;
+        });
+      }
+      
+      // 简答题或单空填空题处理
       if (Array.isArray(correctAnswer)) {
         // 如果有多个可能的正确答案，任一匹配即可
         return correctAnswer.includes(userAnswer);

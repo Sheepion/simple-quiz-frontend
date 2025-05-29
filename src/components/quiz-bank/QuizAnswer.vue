@@ -72,6 +72,33 @@ const handleSubmit = () => {
     return;
   }
   
+  // 对填空题进行特殊验证
+  if (props.question.type === QuestionType.FILL_BLANK && Array.isArray(props.question.answer)) {
+    try {
+      const userAnswers = JSON.parse(props.userAnswer);
+      if (!Array.isArray(userAnswers)) {
+        alert('答案格式错误！');
+        return;
+      }
+      
+      // 检查是否所有空格都已填写
+      const emptyCount = userAnswers.filter(answer => !answer || answer.toString().trim() === '').length;
+      if (emptyCount > 0) {
+        alert(`请填写所有空格！还有 ${emptyCount} 个空格未填写。`);
+        return;
+      }
+      
+      // 检查答案数量是否匹配
+      if (userAnswers.length !== props.question.answer.length) {
+        alert(`答案数量不匹配！应该填写 ${props.question.answer.length} 个空格。`);
+        return;
+      }
+    } catch {
+      alert('答案格式错误！');
+      return;
+    }
+  }
+  
   emit('answer-submit', props.userAnswer);
 };
 
@@ -92,6 +119,11 @@ const getQuestionTypeName = (type) => {
 const formattedCorrectAnswer = computed(() => {
   if (!props.question || !props.question.answer) return '';
   
+  // 如果是填空题且答案是数组，特殊格式化
+  if (props.question.type === QuestionType.FILL_BLANK && Array.isArray(props.question.answer)) {
+    return props.question.answer.map((answer, index) => `第${index + 1}空: ${answer}`).join(', ');
+  }
+  
   // 如果答案是数组，将其转换为逗号分隔的字符串
   if (Array.isArray(props.question.answer)) {
     return props.question.answer.join(', ');
@@ -99,6 +131,64 @@ const formattedCorrectAnswer = computed(() => {
   
   return props.question.answer;
 });
+
+// 格式化用户答案显示
+const formattedUserAnswer = computed(() => {
+  if (!props.userAnswer) return '';
+  
+  // 如果是填空题，尝试解析为数组格式
+  if (props.question && props.question.type === QuestionType.FILL_BLANK) {
+    try {
+      const answers = JSON.parse(props.userAnswer);
+      if (Array.isArray(answers)) {
+        return answers.map((answer, index) => `第${index + 1}空: ${answer || '(未填写)'}`).join(', ');
+      }
+    } catch {
+      // 解析失败，返回原始答案
+    }
+  }
+  
+  return props.userAnswer;
+});
+
+// 获取填空题详细结果的类名
+const getBlankItemClass = (index) => {
+  if (props.showResult && props.question && props.question.type === QuestionType.FILL_BLANK) {
+    return isBlankCorrect(index) ? 'border-success bg-success/10' : 'border-error bg-error/10';
+  }
+  return 'border-gray-200';
+};
+
+// 获取填空题用户答案
+const getUserBlankAnswer = (index) => {
+  if (props.question && props.question.type === QuestionType.FILL_BLANK && props.userAnswer) {
+    try {
+      const userAnswers = JSON.parse(props.userAnswer);
+      return Array.isArray(userAnswers) ? userAnswers[index] : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+};
+
+// 判断填空题答案是否正确
+const isBlankCorrect = (index) => {
+  if (props.question && props.question.type === QuestionType.FILL_BLANK && 
+      Array.isArray(props.question.answer) && props.userAnswer) {
+    try {
+      const userAnswers = JSON.parse(props.userAnswer);
+      if (!Array.isArray(userAnswers)) return false;
+      
+      const userAnswer = (userAnswers[index] || '').toString().trim();
+      const correctAnswer = (props.question.answer[index] || '').toString().trim();
+      return userAnswer === correctAnswer;
+    } catch {
+      return false;
+    }
+  }
+  return false;
+};
 </script>
 
 <template>
@@ -155,7 +245,7 @@ const formattedCorrectAnswer = computed(() => {
         <!-- 当前答案(调试用) -->
         <div class="text-sm mt-4 p-2 bg-base-200 rounded-lg" v-if="userAnswer && !showResult">
           <p class="font-semibold">当前已选答案:</p>
-          <p>{{ userAnswer }}</p>
+          <p>{{ formattedUserAnswer }}</p>
         </div>
         
         <!-- 答题结果展示 -->
@@ -168,7 +258,33 @@ const formattedCorrectAnswer = computed(() => {
             <span>{{ isCorrect ? '回答正确！' : '回答错误！' }}</span>
           </div>
           
-          <div class="mt-4 p-4 bg-base-200 rounded-lg">
+          <!-- 填空题详细结果 -->
+          <div v-if="question.type === QuestionType.FILL_BLANK && Array.isArray(question.answer)" class="mt-4">
+            <h3 class="font-semibold text-lg mb-2">答题详情</h3>
+            <div class="space-y-2">
+              <div v-for="(correctAnswer, index) in question.answer" :key="index" class="p-3 rounded-lg border"
+                   :class="getBlankItemClass(index)">
+                <div class="flex items-center justify-between">
+                  <span class="font-medium">第{{ index + 1 }}空:</span>
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm">{{ getUserBlankAnswer(index) || '(未填写)' }}</span>
+                    <svg v-if="isBlankCorrect(index)" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="text-sm text-gray-600 mt-1">
+                  正确答案: {{ correctAnswer }}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 传统答案显示（非填空题或单空填空题） -->
+          <div v-else class="mt-4 p-4 bg-base-200 rounded-lg">
             <h3 class="font-semibold text-lg mb-2">正确答案</h3>
             <p>{{ formattedCorrectAnswer }}</p>
           </div>
