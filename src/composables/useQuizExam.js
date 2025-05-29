@@ -20,6 +20,9 @@ export default function useQuizExam(quizBankId) {
   const selectedQuestion = ref(null);
   const currentQuestionIndex = ref(0);
   const userAnswers = ref({});
+  
+  // 答题结果相关状态
+  const answerResults = ref({});  // 保存每个题目的答题结果：{ questionId: { showResult: boolean, isCorrect: boolean } }
 
   /**
    * 获取题库信息
@@ -95,6 +98,102 @@ export default function useQuizExam(quizBankId) {
   };
 
   /**
+   * 检查答案是否正确
+   * @param {string} userAnswer - 用户答案
+   * @param {Array|string} correctAnswer - 正确答案
+   * @param {string} questionType - 题目类型
+   * @returns {boolean} 是否正确
+   */
+  const checkAnswer = (userAnswer, correctAnswer, questionType) => {
+    if (!userAnswer || !correctAnswer) return false;
+    
+    // 对于单选题和判断题，直接比较答案
+    if (questionType === 'SINGLE_CHOICE' || questionType === 'JUDGMENT') {
+      // 确保正确答案是数组，且只取第一个元素进行比较
+      let answerToCheck = correctAnswer;
+      if (Array.isArray(correctAnswer)) {
+        answerToCheck = correctAnswer[0];
+      }
+      
+      // 如果是判断题，需要处理答案格式转换（后端可能使用A/B，前端使用T/F）
+      if (questionType === 'JUDGMENT') {
+        // 将后端的A/B转换为前端的T/F
+        if (answerToCheck === 'A') answerToCheck = 'T';
+        if (answerToCheck === 'B') answerToCheck = 'F';
+        
+        // 将前端的T/F转换为后端的A/B用于比较
+        if (userAnswer === 'T') return answerToCheck === 'T' || answerToCheck === 'A';
+        if (userAnswer === 'F') return answerToCheck === 'F' || answerToCheck === 'B';
+      }
+      
+      return userAnswer === answerToCheck;
+    }
+    
+    // 对于多选题，需要比较数组
+    if (questionType === 'MULTIPLE_CHOICE') {
+      // 将用户答案转换为数组
+      const userAnswerArray = userAnswer.split(',').filter(Boolean).sort();
+      
+      // 确保正确答案是数组
+      let correctAnswerArray = correctAnswer;
+      if (!Array.isArray(correctAnswer)) {
+        correctAnswerArray = [correctAnswer];
+      }
+      
+      // 排序以确保顺序不影响比较
+      const sortedCorrectAnswer = [...correctAnswerArray].sort();
+      
+      // 检查长度是否相同
+      if (userAnswerArray.length !== sortedCorrectAnswer.length) {
+        return false;
+      }
+      
+      // 检查每个选项是否匹配
+      return userAnswerArray.every((item, index) => item === sortedCorrectAnswer[index]);
+    }
+    
+    // 对于填空题和简答题，简单比较即可（可能需要更复杂的逻辑）
+    if (questionType === 'FILL_BLANK' || questionType === 'SHORT_ANSWER') {
+      if (Array.isArray(correctAnswer)) {
+        // 如果有多个可能的正确答案，任一匹配即可
+        return correctAnswer.includes(userAnswer);
+      }
+      return userAnswer === correctAnswer;
+    }
+    
+    return false;
+  };
+
+  /**
+   * 提交当前题目答案
+   */
+  const submitAnswer = () => {
+    if (!selectedQuestion.value) return;
+    
+    const questionId = selectedQuestion.value.id;
+    const userAnswer = userAnswers.value[questionId];
+    
+    if (!userAnswer) {
+      // 没有填写答案
+      return false;
+    }
+    
+    // 检查答案是否正确
+    const correctAnswer = selectedQuestion.value.answer;
+    const isCorrect = checkAnswer(userAnswer, correctAnswer, selectedQuestion.value.type);
+    
+    // 保存结果
+    answerResults.value[questionId] = {
+      showResult: true,
+      isCorrect
+    };
+    
+    console.log(`题目 ${questionId} 的答题结果:`, isCorrect ? '正确' : '错误');
+    
+    return true;
+  };
+
+  /**
    * 获取用户当前题目的答案
    */
   const getUserAnswer = computed(() => {
@@ -103,6 +202,15 @@ export default function useQuizExam(quizBankId) {
     const answer = userAnswers.value[questionId];
     console.log(`获取题目 ${questionId} 的答案:`, answer);
     return answer || '';
+  });
+
+  /**
+   * 获取当前题目的答题结果
+   */
+  const getCurrentResult = computed(() => {
+    if (!selectedQuestion.value) return { showResult: false, isCorrect: false };
+    const questionId = selectedQuestion.value.id;
+    return answerResults.value[questionId] || { showResult: false, isCorrect: false };
   });
 
   /**
@@ -161,12 +269,15 @@ export default function useQuizExam(quizBankId) {
     selectedQuestion,
     currentQuestionIndex,
     userAnswers,
+    answerResults,
     getUserAnswer,
+    getCurrentResult,
     
     // 方法
     initQuizExam,
     selectQuestion,
     saveUserAnswer,
+    submitAnswer,
     goToPrevQuestion,
     goToNextQuestion,
     

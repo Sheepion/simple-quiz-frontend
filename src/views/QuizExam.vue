@@ -53,10 +53,13 @@ const {
   selectedQuestion,
   currentQuestionIndex,
   userAnswers,
+  answerResults,
   getUserAnswer,
+  getCurrentResult,
   initQuizExam,
   selectQuestion,
   saveUserAnswer,
+  submitAnswer,
   goToPrevQuestion,
   goToNextQuestion
 } = useQuizExam(quizBankId);
@@ -82,14 +85,14 @@ const handleSubmitAnswer = () => {
     return;
   }
   
-  // 这里可以实现答案提交逻辑
-  console.log('提交答案:', {
-    questionId: selectedQuestion.value.id,
-    answer
-  });
+  // 使用提交答案功能检查答案
+  const success = submitAnswer();
+  if (!success) {
+    alert('请填写答案！');
+    return;
+  }
   
-  // 跳转到下一题
-  goToNextQuestion();
+  console.log('提交答案完成，结果:', getCurrentResult.value);
 };
 </script>
 
@@ -171,6 +174,8 @@ const handleSubmitAnswer = () => {
             :userAnswer="getUserAnswer"
             :is-prev-disabled="currentQuestionIndex <= 0"
             :is-next-disabled="currentQuestionIndex >= questions.length - 1"
+            :showResult="getCurrentResult.showResult"
+            :isCorrect="getCurrentResult.isCorrect"
             @answer-change="handleAnswerChange"
             @answer-submit="handleSubmitAnswer"
             @prev-question="goToPrevQuestion"
