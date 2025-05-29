@@ -159,6 +159,7 @@ const handleSubmitAnswer = () => {
         <div v-else class="overflow-y-auto flex-1">
           <QuestionList
             :questions="questions"
+            :hide-actions="true"
             @view="handleViewQuestion"
             @filter="handleFilter"
           />

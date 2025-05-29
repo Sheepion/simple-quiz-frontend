@@ -3,12 +3,16 @@
  * 题目列表组件
  * 用于展示题目列表，支持表格形式展示，提供题目类型筛选和搜索
  * @props {Array<import('../../models/question').Question>} questions - 题目列表数据
+ * @props {Boolean} hideActions - 是否隐藏操作列，默认为 false
+ * @props {Array<String>} hiddenActions - 要隐藏的操作按钮数组，可选值：'view', 'edit', 'delete'
  * @emits refresh - 当需要刷新列表时触发
  * @emits edit - 当点击编辑按钮时触发
  * @emits delete - 当点击删除按钮时触发
  * @emits view - 当点击查看按钮时触发
  * @emits filter - 当筛选条件变化时触发
  * 使用示例：<QuestionList :questions="questionsList" @refresh="fetchQuestions" @filter="handleFilter" />
+ * 隐藏操作列示例：<QuestionList :questions="questionsList" :hide-actions="true" />
+ * 隐藏特定操作示例：<QuestionList :questions="questionsList" :hidden-actions="['delete']" />
  */
 import { computed, ref } from 'vue';
 import { deleteQuestion } from '../../api/question';
@@ -20,6 +24,14 @@ const props = defineProps({
   questions: {
     type: Array,
     required: true,
+    default: () => []
+  },
+  hideActions: {
+    type: Boolean,
+    default: false
+  },
+  hiddenActions: {
+    type: Array,
     default: () => []
   }
 });
@@ -70,6 +82,29 @@ const getQuestionTypeClass = (type) => {
   };
   return `badge ${classMap[type] || 'badge-ghost'} badge-md`;
 };
+
+// 操作按钮显示控制
+const shouldShowAction = (actionName) => {
+  return !props.hideActions && !props.hiddenActions.includes(actionName);
+};
+
+// 是否显示查看按钮
+const shouldShowViewAction = computed(() => shouldShowAction('view'));
+
+// 是否显示编辑按钮  
+const shouldShowEditAction = computed(() => shouldShowAction('edit'));
+
+// 是否显示删除按钮
+const shouldShowDeleteAction = computed(() => shouldShowAction('delete'));
+
+// 是否显示操作列（至少有一个操作按钮可见时才显示）
+const shouldShowActionsColumn = computed(() => {
+  return !props.hideActions && (
+    shouldShowViewAction.value || 
+    shouldShowEditAction.value || 
+    shouldShowDeleteAction.value
+  );
+});
 
 // 本地筛选（实际项目中应通过API筛选）
 const filteredQuestions = computed(() => {
@@ -210,7 +245,7 @@ const handleView = (question) => {
             <th class="w-16">序号</th>
             <th class="w-28">类型</th>
             <th>题目标题</th>
-            <th class="w-20 text-center">操作</th>
+            <th v-if="shouldShowActionsColumn" class="w-20 text-center">操作</th>
           </tr>
         </thead>
         
@@ -229,12 +264,13 @@ const handleView = (question) => {
               </span>
             </td>
             <td class="font-medium">{{ question.title }}</td>
-            <td @click.stop>
+            <td v-if="shouldShowActionsColumn" @click.stop>
               <div class="flex justify-center">
                 <button 
                   @click="handleView(question)" 
                   class="btn btn-sm btn-ghost"
                   title="查看详情"
+                  v-if="shouldShowViewAction"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -245,6 +281,7 @@ const handleView = (question) => {
                   @click="openDeleteModal(question)" 
                   class="btn btn-sm btn-ghost"
                   title="删除题目"
+                  v-if="shouldShowDeleteAction"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
